@@ -1,0 +1,34 @@
+### --- Java & Maven --- ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.nextSnapshot
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+# Dacă folosești un wrapper de Maven
+.mvn/wrapper/maven-wrapper.jar
+
+### --- IntelliJ IDEA --- ###
+.idea/
+*.iws
+*.iml
+*.ipr
+# Excepție: dacă vrei să partajezi stilul de cod cu echipa, unii păstrează .idea/codeStyles
+# dar pentru proiecte personale, ignoră tot folderul .idea/
+
+### --- Loguri și Temp --- ###
+*.log
+logs/
+temp/
+tmp/
+
+### --- OS Specific (Arch/Linux) --- ###
+.DS_Store
+.directory
+Desktop.ini
+*~
+*.swp
+*.bak
