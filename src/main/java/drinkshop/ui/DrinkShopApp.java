@@ -39,6 +39,8 @@ public class DrinkShopApp extends Application {
         stage.setTitle("Coffee Shop Management");
         stage.setScene(scene);
         stage.show();
+
+        // comment de test
     }
 
     public static void main(String[] args) {
