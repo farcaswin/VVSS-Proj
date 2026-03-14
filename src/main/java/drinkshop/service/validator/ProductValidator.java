@@ -1,24 +1,28 @@
 package drinkshop.service.validator;
 
 import drinkshop.domain.Product;
+import drinkshop.service.exception.BusinessException;
+import drinkshop.service.exception.ErrorConstants;
+import drinkshop.service.util.NullSafe;
 
 public class ProductValidator implements Validator<Product> {
 
     @Override
     public void validate(Product product) {
-
+        NullSafe.requireNonNull(product, String.format(ErrorConstants.NULL_ENTITY, "Product"));
+        
         String errors = "";
 
         if (product.getId() <= 0)
-            errors += "ID invalid!\n";
+            errors += ErrorConstants.INVALID_ID + "\n";
 
-        if (product.getNume() == null || product.getNume().isBlank())
-            errors += "Numele nu poate fi gol!\n";
+        if (NullSafe.isNullOrEmpty(product.getNume()))
+            errors += ErrorConstants.INVALID_NAME + "\n";
 
         if (product.getPret() <= 0)
-            errors += "Pret invalid!\n";
+            errors += ErrorConstants.INVALID_PRICE + "\n";
 
         if (!errors.isEmpty())
-            throw new ValidationException(errors);
+            throw new BusinessException("PRODUCT_VALIDATION_ERROR", errors.trim());
     }
 }
