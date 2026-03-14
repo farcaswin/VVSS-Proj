@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Order implements Serializable {
 
-    private int id;
+    private final int id;
     private List<OrderItem> items;
     private double totalPrice;
 
@@ -30,12 +30,12 @@ public class Order implements Serializable {
         return items;
     }
 
-    public double getTotalPrice() {
-        return totalPrice;
-    }
-
     public void setItems(List<OrderItem> items) {
         this.items = items;
+    }
+
+    public double getTotalPrice() {
+        return totalPrice;
     }
 
     public void setTotalPrice(double totalPrice) {
@@ -64,6 +64,6 @@ public class Order implements Serializable {
     }
 
     public void computeTotalPrice() {
-        this.totalPrice=items.stream().mapToDouble(OrderItem::getTotal).sum();
+        this.totalPrice = items.stream().mapToDouble(OrderItem::getTotal).sum();
     }
 }

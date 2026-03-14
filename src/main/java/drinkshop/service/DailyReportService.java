@@ -4,7 +4,7 @@ import drinkshop.domain.Order;
 import drinkshop.repository.Repository;
 
 public class DailyReportService {
-    private Repository<Integer, Order> repo;
+    private final Repository<Integer, Order> repo;
 
     public DailyReportService(Repository<Integer, Order> repo) {
         this.repo = repo;

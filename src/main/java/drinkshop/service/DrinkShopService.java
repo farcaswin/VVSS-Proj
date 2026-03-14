@@ -20,8 +20,8 @@ public class DrinkShopService {
 
     private final ProductService productService;
     private final OrderService orderService;
-    private final RetetaService retetaService;
-    private final StocService stocService;
+    private final RecipeService recipeService;
+    private final StockService stockService;
     private final DailyReportService report;
 
     /**
@@ -31,25 +31,25 @@ public class DrinkShopService {
     public DrinkShopService(
             Repository<Integer, Product> productRepo,
             Repository<Integer, Order> orderRepo,
-            Repository<Integer, Reteta> retetaRepo,
-            Repository<Integer, Stoc> stocRepo
+            Repository<Integer, Recipe> retetaRepo,
+            Repository<Integer, Stock> stocRepo
     ) {
         NullSafe.requireNonNull(productRepo, "Product repository cannot be null");
         NullSafe.requireNonNull(orderRepo, "Order repository cannot be null");
         NullSafe.requireNonNull(retetaRepo, "Recipe repository cannot be null");
         NullSafe.requireNonNull(stocRepo, "Stock repository cannot be null");
-        
+
         // Initialize validators (C06 - Dependency Injection of Validators)
         Validator<Product> productValidator = new ProductValidator();
         Validator<Order> orderValidator = new OrderValidator();
-        Validator<Reteta> retetaValidator = new RetetaValidator();
-        Validator<Stoc> stocValidator = new StocValidator();
-        
+        Validator<Recipe> retetaValidator = new RecipeValidator();
+        Validator<Stock> stocValidator = new StockValidator();
+
         // Initialize services with validators injected
         this.productService = new ProductService(productRepo, productValidator);
         this.orderService = new OrderService(orderRepo, productRepo, orderValidator);
-        this.retetaService = new RetetaService(retetaRepo, retetaValidator);
-        this.stocService = new StocService(stocRepo, stocValidator);
+        this.recipeService = new RecipeService(retetaRepo, retetaValidator);
+        this.stockService = new StockService(stocRepo, stocValidator);
         this.report = new DailyReportService(orderRepo);
     }
 
@@ -58,7 +58,7 @@ public class DrinkShopService {
         productService.addProduct(p);
     }
 
-    public void updateProduct(int id, String name, double price, CategorieBautura categorie, TipBautura tip) {
+    public void updateProduct(int id, String name, double price, BeverageCategory categorie, BeverageType tip) {
         productService.updateProduct(id, name, price, categorie, tip);
     }
 
@@ -74,11 +74,11 @@ public class DrinkShopService {
         return productService.findById(id);
     }
 
-    public List<Product> filtreazaDupaCategorie(CategorieBautura categorie) {
+    public List<Product> filtreazaDupaCategorie(BeverageCategory categorie) {
         return productService.filterByCategorie(categorie);
     }
 
-    public List<Product> filtreazaDupaTip(TipBautura tip) {
+    public List<Product> filtreazaDupaTip(BeverageType tip) {
         return productService.filterByTip(tip);
     }
 
@@ -118,93 +118,93 @@ public class DrinkShopService {
     }
 
     // ==================== STOCK + RECIPE SERVICE ====================
-    
+
     /**
      * Order product - checks if sufficient stock and consumes ingredients
      * (C05 - Null checks, C06 - Validation, C08 - Custom errors)
      */
     public void comandaProdus(Product produs) {
         NullSafe.requireNonNull(produs, "Product cannot be null");
-        
+
         try {
             // C05: Null-safe recipe lookup using Optional
-            Optional<Reteta> recipeOpt = retetaService.findById(produs.getId());
-            
+            Optional<Recipe> recipeOpt = recipeService.findById(produs.getId());
+
             if (recipeOpt.isEmpty()) {
                 throw new BusinessException("RECIPE_NOT_FOUND",
-                    String.format("No recipe found for product: %s", produs.getNume()));
+                        String.format("No recipe found for product: %s", produs.getNume()));
             }
-            
-            Reteta reteta = recipeOpt.get();
-            
+
+            Recipe recipe = recipeOpt.get();
+
             // C06: Validate sufficient stock before consuming
-            if (!stocService.areSuficient(reteta)) {
+            if (!stockService.areSuficient(recipe)) {
                 throw new BusinessException("INSUFFICIENT_STOCK",
-                    String.format("Insufficient stock to produce: %s", produs.getNume()));
+                        String.format("Insufficient stock to produce: %s", produs.getNume()));
             }
-            
-            stocService.consuma(reteta);
+
+            stockService.consuma(recipe);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             throw new BusinessException("PRODUCT_ORDER_FAILED",
-                String.format("Failed to order product %s: %s", produs.getNume(), e.getMessage()), e);
+                    String.format("Failed to order product %s: %s", produs.getNume(), e.getMessage()), e);
         }
     }
 
     /**
      * Get all recipes
      */
-    public List<Reteta> getAllRetete() {
-        return retetaService.getAll();
+    public List<Recipe> getAllRetete() {
+        return recipeService.getAll();
     }
 
     /**
      * Add recipe with validation
      */
-    public void addReteta(Reteta r) {
-        retetaService.addReteta(r);
+    public void addReteta(Recipe r) {
+        recipeService.addReteta(r);
     }
 
     /**
      * Update recipe with validation
      */
-    public void updateReteta(Reteta r) {
-        retetaService.updateReteta(r);
+    public void updateReteta(Recipe r) {
+        recipeService.updateReteta(r);
     }
 
     /**
      * Delete recipe with existence check
      */
     public void deleteReteta(int id) {
-        retetaService.deleteReteta(id);
+        recipeService.deleteReteta(id);
     }
 
     /**
      * Find recipe by ID using Optional pattern
      */
-    public Optional<Reteta> getRetetaById(int id) {
-        return retetaService.findById(id);
+    public Optional<Recipe> getRetetaById(int id) {
+        return recipeService.findById(id);
     }
 
     // ==================== STOCK SERVICE ====================
-    public void addStoc(Stoc s) {
-        stocService.add(s);
+    public void addStoc(Stock s) {
+        stockService.add(s);
     }
 
-    public void updateStoc(Stoc s) {
-        stocService.update(s);
+    public void updateStoc(Stock s) {
+        stockService.update(s);
     }
 
     public void deleteStoc(int id) {
-        stocService.delete(id);
+        stockService.delete(id);
     }
 
-    public List<Stoc> getAllStoc() {
-        return stocService.getAll();
+    public List<Stock> getAllStoc() {
+        return stockService.getAll();
     }
 
-    public boolean checkStockSufficiency(Reteta reteta) {
-        return stocService.areSuficient(reteta);
+    public boolean checkStockSufficiency(Recipe recipe) {
+        return stockService.areSuficient(recipe);
     }
 }

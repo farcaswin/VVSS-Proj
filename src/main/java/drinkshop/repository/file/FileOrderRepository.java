@@ -11,7 +11,7 @@ import java.util.List;
 public class FileOrderRepository
         extends FileAbstractRepository<Integer, Order> {
 
-    private Repository<Integer, Product> productRepository;
+    private final Repository<Integer, Product> productRepository;
 
     public FileOrderRepository(String fileName, Repository<Integer, Product> productRepository) {
         super(fileName);

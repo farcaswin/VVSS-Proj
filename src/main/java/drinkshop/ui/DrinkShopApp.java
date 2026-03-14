@@ -1,11 +1,14 @@
 package drinkshop.ui;
 
-import drinkshop.domain.*;
+import drinkshop.domain.Order;
+import drinkshop.domain.Product;
+import drinkshop.domain.Recipe;
+import drinkshop.domain.Stock;
 import drinkshop.repository.Repository;
 import drinkshop.repository.file.FileOrderRepository;
 import drinkshop.repository.file.FileProductRepository;
-import drinkshop.repository.file.FileRetetaRepository;
-import drinkshop.repository.file.FileStocRepository;
+import drinkshop.repository.file.FileRecipeRepository;
+import drinkshop.repository.file.FileStockRepository;
 import drinkshop.service.DrinkShopService;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -14,14 +17,18 @@ import javafx.stage.Stage;
 
 public class DrinkShopApp extends Application {
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
 
         // ---------- Initializare Repository-uri care citesc din fisiere ----------
         Repository<Integer, Product> productRepo = new FileProductRepository("data/products.txt");
         Repository<Integer, Order> orderRepo = new FileOrderRepository("data/orders.txt", productRepo);
-        Repository<Integer, Reteta> retetaRepo = new FileRetetaRepository("data/retete.txt");
-        Repository<Integer, Stoc> stocRepo = new FileStocRepository("data/stocuri.txt");
+        Repository<Integer, Recipe> retetaRepo = new FileRecipeRepository("data/retete.txt");
+        Repository<Integer, Stock> stocRepo = new FileStockRepository("data/stocuri.txt");
 
         // ---------- Initializare Service ----------
         DrinkShopService service = new DrinkShopService(productRepo, orderRepo, retetaRepo, stocRepo);
@@ -41,9 +48,5 @@ public class DrinkShopApp extends Application {
         stage.show();
 
         // comment de test
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }

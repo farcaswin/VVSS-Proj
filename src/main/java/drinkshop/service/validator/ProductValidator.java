@@ -10,7 +10,7 @@ public class ProductValidator implements Validator<Product> {
     @Override
     public void validate(Product product) {
         NullSafe.requireNonNull(product, String.format(ErrorConstants.NULL_ENTITY, "Product"));
-        
+
         String errors = "";
 
         if (product.getId() <= 0)
