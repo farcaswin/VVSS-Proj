@@ -1,0 +1,325 @@
+@startuml MyDrinkShop_v2.0_Corrected
+
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+
+' =====================================================================
+' LAYER 1: DOMAIN MODEL (Domain classes - Heart of the application)
+' =====================================================================
+
+enum BeverageCategory << enumeration >>
+enum BeverageType << enumeration >>
+
+class Product {
+  -id: Long
+  -name: String
+  -category: BeverageCategory
+  -type: BeverageType
+  -price: double
+}
+
+class Recipe {
+  -id: Long
+  -name: String
+  -description: String
+  -ingredients: List<RecipeIngredient>
+}
+
+class RecipeIngredient {
+  -id: Long
+  -ingredient: String
+  -quantity: double
+  -unit: String
+}
+
+class Stock {
+  -id: Long
+  -productId: Long
+  -quantity: double
+  -lastUpdated: LocalDateTime
+}
+
+class Order {
+  -id: Long
+  -orderDate: LocalDateTime
+  -items: List<OrderItem>
+  -totalPrice: double
+}
+
+class OrderItem {
+  -id: Long
+  -product: Product
+  -quantity: double
+  -price: double
+}
+
+' =====================================================================
+' LAYER 2: VALIDATION LAYER (Generic Validator Pattern)
+' =====================================================================
+
+interface Validator<T> << interface >> {
+  +validate(T): void
+  +isValid(T): boolean
+}
+
+class ValidationException {
+  -message: String
+}
+
+class ProductValidator {
+  +validate(product: Product): void
+}
+
+class RecipeValidator {
+  +validate(recipe: Recipe): void
+}
+
+class RecipeIngredientValidator {
+  +validate(ingredient: RecipeIngredient): void
+}
+
+class StockValidator {
+  +validate(stock: Stock): void
+}
+
+class OrderValidator {
+  -itemValidator: OrderItemValidator
+  +validate(order: Order): void
+}
+
+class OrderItemValidator {
+  +validate(item: OrderItem): void
+}
+
+' =====================================================================
+' LAYER 3: REPOSITORY LAYER (Data Access Layer)
+' =====================================================================
+
+interface Repository<ID, E> << interface >> {
+  +save(E): void
+  +findById(ID): E
+  +findAll(): List<E>
+  +delete(ID): void
+}
+
+abstract class AbstractRepository<ID, E> {
+  #data: List<E>
+  +save(E): void
+  +findById(ID): E
+  +findAll(): List<E>
+  +delete(ID): void
+}
+
+abstract class FileAbstractRepository<ID, E> {
+  #filePath: String
+  +loadFromFile(): void
+  +saveToFile(): void
+}
+
+class FileProductRepository {
+  +save(product: Product): void
+  +findById(id: Long): Product
+}
+
+class FileRecipeRepository {
+  +save(recipe: Recipe): void
+  +findById(id: Long): Recipe
+}
+
+class FileStockRepository {
+  +save(stock: Stock): void
+  +findById(id: Long): Stock
+}
+
+class FileOrderRepository {
+  -productRepository: Repository<Long, Product>
+  +save(order: Order): void
+  +findById(id: Long): Order
+}
+
+' =====================================================================
+' LAYER 4: SERVICE LAYER (Business Logic Layer)
+' =====================================================================
+
+class ProductService {
+  -productRepo: Repository<Long, Product>
+  -validator: ProductValidator
+  +createProduct(product: Product): void
+  +getProduct(id: Long): Product
+  +updateProduct(product: Product): void
+}
+
+class RecipeService {
+  -recipeRepo: Repository<Long, Recipe>
+  -validator: RecipeValidator
+  +createRecipe(recipe: Recipe): void
+  +getRecipe(id: Long): Recipe
+  +updateRecipe(recipe: Recipe): void
+}
+
+class StockService {
+  -stockRepo: Repository<Long, Stock>
+  -validator: StockValidator
+  +addStock(stock: Stock): void
+  +getStock(id: Long): Stock
+  +updateStock(stock: Stock): void
+}
+
+class OrderService {
+  -orderRepo: Repository<Long, Order>
+  -validator: OrderValidator
+  +createOrder(order: Order): void
+  +getOrder(id: Long): Order
+  +confirmOrder(id: Long): void
+}
+
+class DailyReportService {
+  -repository: Repository
+  +generateDailyReport(date: LocalDate): Report
+  +getOrdersByDate(date: LocalDate): List<Order>
+  +getSalesStatistics(): Map
+}
+
+class DrinkShopService {
+  -orderService: OrderService
+  -productService: ProductService
+  -recipeService: RecipeService
+  -stockService: StockService
+  -reportService: DailyReportService
+  +processOrder(order: Order): void
+}
+
+' =====================================================================
+' LAYER 5: EXPORT/UTILITY LAYER
+' =====================================================================
+
+class CsvExporter {
+  +export(data: List, filename: String): void
+  +exportOrders(orders: List<Order>): void
+}
+
+class ReceiptGenerator {
+  +generate(order: Order): Receipt
+  +print(receipt: Receipt): void
+}
+
+' =====================================================================
+' LAYER 6: PRESENTATION LAYER (UI Layer)
+' =====================================================================
+
+class DrinkShopApp {
+  -controller: DrinkShopController
+  +start(): void
+}
+
+class DrinkShopController {
+  -service: DrinkShopService
+  -productList: List<Product>
+  -retetaList: List<Recipe>
+  -currentOrder: Order
+  -currentOrderItems: List<OrderItem>
+  +initializeUI(): void
+  +handleAddProduct(): void
+  +handleCreateOrder(): void
+}
+
+' =====================================================================
+' TEST LAYER
+' =====================================================================
+
+class ProductTest {
+  -product: Product
+  +testProductCreation(): void
+}
+
+' =====================================================================
+' RELATIONSHIPS - DOMAIN LAYER
+' =====================================================================
+
+Product "1" *-[#595959,plain]-> "categorie\n1" BeverageCategory
+Product "1" *-[#595959,plain]-> "tip\n1" BeverageType
+
+Order "1" *-[#595959,plain]-> "items\n*" OrderItem
+OrderItem "1" *-[#595959,plain]-> "product\n1" Product
+
+Recipe "1" *-[#595959,plain]-> "ingrediente\n*" RecipeIngredient
+
+' =====================================================================
+' RELATIONSHIPS - VALIDATION LAYER
+' =====================================================================
+
+ProductValidator -[#008200,dashed]-^ Validator
+RecipeValidator -[#008200,dashed]-^ Validator
+RecipeIngredientValidator -[#008200,dashed]-^ Validator
+StockValidator -[#008200,dashed]-^ Validator
+OrderValidator -[#008200,dashed]-^ Validator
+OrderItemValidator -[#008200,dashed]-^ Validator
+
+OrderValidator "1" *-[#595959,plain]-> "itemValidator\n1" OrderItemValidator
+
+' =====================================================================
+' RELATIONSHIPS - REPOSITORY LAYER
+' =====================================================================
+
+AbstractRepository -[#000082,plain]-^ Repository
+
+FileAbstractRepository -[#000082,plain]-^ AbstractRepository
+FileProductRepository -[#000082,plain]-^ FileAbstractRepository
+FileRecipeRepository -[#000082,plain]-^ FileAbstractRepository
+FileStockRepository -[#000082,plain]-^ FileAbstractRepository
+FileOrderRepository -[#000082,plain]-^ FileAbstractRepository
+
+FileOrderRepository "1" *-[#595959,plain]-> "productRepository\n1" Repository
+
+' =====================================================================
+' RELATIONSHIPS - SERVICE LAYER
+' =====================================================================
+
+ProductService "1" *-[#595959,plain]-> "productRepo\n1" Repository
+ProductService "1" *-[#595959,plain]-> "validator\n1" ProductValidator
+
+RecipeService "1" *-[#595959,plain]-> "recipeRepo\n1" Repository
+RecipeService "1" *-[#595959,plain]-> "validator\n1" RecipeValidator
+
+StockService "1" *-[#595959,plain]-> "stockRepo\n1" Repository
+StockService "1" *-[#595959,plain]-> "validator\n1" StockValidator
+
+OrderService "1" *-[#595959,plain]-> "orderRepo\n1" Repository
+OrderService "1" *-[#595959,plain]-> "validator\n1" OrderValidator
+
+DailyReportService "1" *-[#595959,plain]-> "repository\n1" Repository
+
+DrinkShopService "1" *-[#595959,plain]-> "orderService\n1" OrderService
+DrinkShopService "1" *-[#595959,plain]-> "productService\n1" ProductService
+DrinkShopService "1" *-[#595959,plain]-> "recipeService\n1" RecipeService
+DrinkShopService "1" *-[#595959,plain]-> "stockService\n1" StockService
+DrinkShopService "1" *-[#595959,plain]-> "reportService\n1" DailyReportService
+
+' =====================================================================
+' RELATIONSHIPS - EXPORT/UTILITY LAYER
+' =====================================================================
+
+CsvExporter "1" *-[#595959,plain]-> "exports\n*" Order
+ReceiptGenerator "1" *-[#595959,plain]-> "generates\n1" Order
+
+' =====================================================================
+' RELATIONSHIPS - PRESENTATION LAYER
+' =====================================================================
+
+DrinkShopApp "1" *-[#595959,plain]-> "controller\n1" DrinkShopController
+
+DrinkShopController "1" *-[#595959,plain]-> "service\n1" DrinkShopService
+DrinkShopController "1" *-[#595959,plain]-> "productList\n*" Product
+DrinkShopController "1" *-[#595959,plain]-> "retetaList\n*" Recipe
+DrinkShopController "1" *-[#595959,plain]-> "currentOrder\n1" Order
+DrinkShopController "1" *-[#595959,plain]-> "currentOrderItems\n*" OrderItem
+
+' =====================================================================
+' RELATIONSHIPS - TEST LAYER
+' =====================================================================
+
+ProductTest "1" *-[#595959,plain]-> "product\n1" Product
+
+@enduml
+

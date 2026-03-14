@@ -4,76 +4,203 @@ import drinkshop.domain.IngredientReteta;
 import drinkshop.domain.Reteta;
 import drinkshop.domain.Stoc;
 import drinkshop.repository.Repository;
+import drinkshop.service.exception.BusinessException;
+import drinkshop.service.exception.ErrorConstants;
+import drinkshop.service.util.NullSafe;
+import drinkshop.service.validator.StocValidator;
+import drinkshop.service.validator.Validator;
 
 import java.util.List;
+import java.util.Optional;
 
+/**
+ * StocService - Manages all stock-related business operations.
+ * Includes dependency injection for StocValidator (C06 - Input Validation).
+ * Includes null-safe checks and Optional pattern (C05 - NullPointerException Prevention).
+ * Includes custom error messages (C08 - Error Handling).
+ */
 public class StocService {
 
     private final Repository<Integer, Stoc> stocRepo;
+    private final Validator<Stoc> stocValidator;
 
-    public StocService(Repository<Integer, Stoc> stocRepo) {
-        this.stocRepo = stocRepo;
+    /**
+     * Constructor with Dependency Injection
+     * @param stocRepo Repository for stock persistence
+     * @param stocValidator Validator for stock validation
+     */
+    public StocService(Repository<Integer, Stoc> stocRepo, Validator<Stoc> stocValidator) {
+        this.stocRepo = NullSafe.requireNonNull(stocRepo, ErrorConstants.NULL_REPOSITORY);
+        this.stocValidator = NullSafe.requireNonNull(stocValidator, ErrorConstants.NULL_VALIDATOR);
     }
 
+    /**
+     * Get all stocks (C05 - Null-safe handling)
+     * @return List of all stocks
+     */
     public List<Stoc> getAll() {
-        return stocRepo.findAll();
+        try {
+            List<Stoc> stocks = stocRepo.findAll();
+            // C05: Null-safe check
+            return NullSafe.isNotEmpty(stocks) ? stocks : List.of();
+        } catch (Exception e) {
+            throw new BusinessException("STOCKS_FETCH_FAILED", 
+                String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);
+        }
     }
 
+    /**
+     * Add new stock with validation (C06 - Input Data Validation)
+     * @param s Stock to add
+     * @throws BusinessException if stock validation fails
+     */
     public void add(Stoc s) {
-        stocRepo.save(s);
+        // C06: Validate input data before processing
+        stocValidator.validate(s);
+        
+        NullSafe.requireNonNull(s, String.format(ErrorConstants.NULL_ENTITY, "Stock"));
+        
+        try {
+            stocRepo.save(s);
+        } catch (Exception e) {
+            throw new BusinessException("STOCK_ADD_FAILED", 
+                String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);
+        }
     }
 
+    /**
+     * Update existing stock with validation (C06 - Input Data Validation)
+     * @param s Stock to update
+     * @throws BusinessException if validation fails or stock not found
+     */
     public void update(Stoc s) {
-        stocRepo.update(s);
+        // C06: Validate before update
+        stocValidator.validate(s);
+        
+        NullSafe.requireNonNull(s, String.format(ErrorConstants.NULL_ENTITY, "Stock"));
+        
+        // C05: Check if stock exists
+        Optional<Stoc> existing = Optional.ofNullable(stocRepo.findOne(s.getId()));
+        if (existing.isEmpty()) {
+            throw new BusinessException("STOCK_NOT_FOUND", 
+                String.format(ErrorConstants.STOCK_NOT_FOUND, s.getId()));
+        }
+        
+        try {
+            stocRepo.update(s);
+        } catch (Exception e) {
+            throw new BusinessException("STOCK_UPDATE_FAILED", 
+                String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);
+        }
     }
 
+    /**
+     * Delete stock with existence check (C05 - NullPointerException Prevention)
+     * @param id Stock ID
+     * @throws BusinessException if stock not found
+     */
     public void delete(int id) {
-        stocRepo.delete(id);
+        // C05: Check if stock exists before deletion
+        Optional<Stoc> stock = Optional.ofNullable(stocRepo.findOne(id));
+        
+        if (stock.isEmpty()) {
+            throw new BusinessException("STOCK_NOT_FOUND", 
+                String.format(ErrorConstants.STOCK_NOT_FOUND, id));
+        }
+        
+        try {
+            stocRepo.delete(id);
+        } catch (Exception e) {
+            throw new BusinessException("STOCK_DELETE_FAILED", 
+                String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);
+        }
     }
 
+    /**
+     * Check if sufficient stock available for recipe (C05 - Null-safe checks, C08 - Custom errors)
+     * @param reteta Recipe to check stock for
+     * @return true if sufficient stock, false otherwise
+     * @throws BusinessException if recipe is null or stock check fails
+     */
     public boolean areSuficient(Reteta reteta) {
-        List<IngredientReteta> ingredienteNecesare = reteta.getIngrediente();
+        NullSafe.requireNonNull(reteta, String.format(ErrorConstants.NULL_ENTITY, "Recipe"));
+        NullSafe.requireNonNull(reteta.getIngrediente(), String.format(ErrorConstants.NULL_ENTITY, "Recipe ingredients"));
+        
+        try {
+            List<IngredientReteta> ingredienteNecesare = reteta.getIngrediente();
 
-        for (IngredientReteta e : ingredienteNecesare) {
-            String ingredient = e.getDenumire();
-            double necesar = e.getCantitate();
+            for (IngredientReteta e : ingredienteNecesare) {
+                // C05: Null-safe ingredient checks
+                if (NullSafe.isNullOrEmpty(e.getDenumire())) {
+                    throw new BusinessException("INVALID_INGREDIENT", 
+                        "Recipe contains invalid ingredient name");
+                }
+                
+                String ingredient = e.getDenumire();
+                double necesar = e.getCantitate();
 
-            double disponibil = stocRepo.findAll().stream()
-                    .filter(s -> s.getIngredient().equalsIgnoreCase(ingredient))
-                    .mapToDouble(Stoc::getCantitate)
-                    .sum();
+                double disponibil = getAll().stream()
+                        .filter(s -> s.getIngredient().equalsIgnoreCase(ingredient))
+                        .mapToDouble(Stoc::getCantitate)
+                        .sum();
 
-            if (disponibil < necesar) {
-                return false;
+                if (disponibil < necesar) {
+                    // C08: Custom error message with specific details
+                    throw new BusinessException("INSUFFICIENT_STOCK",
+                        String.format("Insufficient stock for ingredient '%s': required %.2f, available %.2f",
+                            ingredient, necesar, disponibil));
+                }
             }
+            return true;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("STOCK_CHECK_FAILED", 
+                String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);
         }
-        return true;
     }
 
+    /**
+     * Consume ingredients from stock for recipe (C05 - Null-safe, C06 - Validate before consume, C08 - Error messages)
+     * @param reteta Recipe to consume ingredients for
+     * @throws BusinessException if insufficient stock or operation fails
+     */
     public void consuma(Reteta reteta) {
-        if (!areSuficient(reteta)) {
-            throw new IllegalStateException("Stoc insuficient pentru rețeta.");
-        }
-
-        for (IngredientReteta e : reteta.getIngrediente()) {
-            String ingredient = e.getDenumire();
-            double necesar = e.getCantitate();
-
-            List<Stoc> ingredienteStoc = stocRepo.findAll().stream()
-                    .filter(s -> s.getIngredient().equalsIgnoreCase(ingredient))
-                    .toList();
-
-            double ramas = necesar;
-
-            for (Stoc s : ingredienteStoc) {
-                if (ramas <= 0) break;
-
-                double deScazut = Math.min(s.getCantitate(), ramas);
-                s.setCantitate((int)(s.getCantitate() - deScazut));
-                ramas -= deScazut;
-
-                stocRepo.update(s);
+        NullSafe.requireNonNull(reteta, String.format(ErrorConstants.NULL_ENTITY, "Recipe"));
+        
+        try {
+            // C06: Validate sufficient stock before consuming
+            if (!areSuficient(reteta)) {
+                throw new BusinessException("INSUFFICIENT_STOCK", ErrorConstants.STOCK_INSUFFICIENT);
             }
+
+            for (IngredientReteta e : reteta.getIngrediente()) {
+                String ingredient = e.getDenumire();
+                double necesar = e.getCantitate();
+
+                List<Stoc> ingredienteStoc = getAll().stream()
+                        .filter(s -> s.getIngredient().equalsIgnoreCase(ingredient))
+                        .toList();
+
+                double ramas = necesar;
+
+                for (Stoc s : ingredienteStoc) {
+                    if (ramas <= 0) break;
+
+                    double deScazut = Math.min(s.getCantitate(), ramas);
+                    s.setCantitate((int)(s.getCantitate() - deScazut));
+                    ramas -= deScazut;
+
+                    // C06: Validate before updating consumed stock
+                    stocValidator.validate(s);
+                    stocRepo.update(s);
+                }
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("STOCK_CONSUMPTION_FAILED", 
+                String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);
         }
     }
 }
