@@ -19,6 +19,9 @@ public class ProductValidator implements Validator<Product> {
         if (NullSafe.isNullOrEmpty(product.getNume()))
             errors += ErrorConstants.INVALID_NAME + "\n";
 
+        if (product.getNume().length() < 3 || product.getNume().length() > 255)
+            errors += ErrorConstants.PRODUCT_INVALID_NAME_LENGTH + "\n";
+
         if (product.getPret() <= 0)
             errors += ErrorConstants.INVALID_PRICE + "\n";
 

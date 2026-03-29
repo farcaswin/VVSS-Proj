@@ -49,6 +49,7 @@ public class ProductService {
 
         try {
             productRepo.save(p);
+            System.out.println("Product added");
         } catch (Exception e) {
             throw new BusinessException("PRODUCT_ADD_FAILED",
                     String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);

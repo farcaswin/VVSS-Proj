@@ -4,9 +4,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class ProductTest {
 
-    Product product;
+    private Product product;
 
     @BeforeEach
     void setUp() {
@@ -19,52 +21,52 @@ class ProductTest {
     }
 
     @Test
-    void getId() {
+    void testGetId() {
         assert 100 == product.getId();
     }
 
     @Test
-    void getNume() {
-        assert "Limonada".equals(product.getNume());
+    void testGetNume() {
+        assertEquals("Limonada", product.getNume(), "Product name should be \"Limonada\"");
     }
 
     @Test
-    void getPret() {
-        assert 10.0 == product.getPret();
-    }
-
-    @Test
-    void getCategorie() {
-        assert BeverageCategory.JUICE.equals(product.getCategorie());
-    }
-
-    @Test
-    void setCategorie() {
-        product.setCategorie(BeverageCategory.SMOOTHIE);
-        assert BeverageCategory.SMOOTHIE.equals(product.getCategorie());
-    }
-
-    @Test
-    void getTip() {
-        assert BeverageType.WATER_BASED.equals(product.getTip());
-    }
-
-    @Test
-    void setTip() {
-        product.setTip(BeverageType.BASIC);
-        assert BeverageType.BASIC.equals(product.getTip());
-    }
-
-    @Test
-    void setNume() {
+    void testSetNume() {
         product.setNume("newLimonada");
         assert "newLimonada".equals(product.getNume());
     }
 
     @Test
-    void setPret() {
+    void testGetPret() {
+        assert 10.0 == product.getPret();
+    }
+
+    @Test
+    void testSetPret() {
         product.setPret(10.05);
         assert 10.05 == product.getPret();
+    }
+
+    @Test
+    void testGetCategorie() {
+        assert BeverageCategory.JUICE.equals(product.getCategorie());
+    }
+
+    @Test
+    void testSetCategorie() {
+        product.setCategorie(BeverageCategory.SMOOTHIE);
+        assert BeverageCategory.SMOOTHIE.equals(product.getCategorie());
+    }
+
+    @Test
+    void testGetTip() {
+        assert BeverageType.WATER_BASED.equals(product.getTip());
+    }
+
+    @Test
+    void testSetTip() {
+        product.setTip(BeverageType.BASIC);
+        assert BeverageType.BASIC.equals(product.getTip());
     }
 
     @Test

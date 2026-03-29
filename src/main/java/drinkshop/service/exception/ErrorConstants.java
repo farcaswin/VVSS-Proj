@@ -16,6 +16,7 @@ public class ErrorConstants {
     public static final String PRODUCT_ALREADY_EXISTS = "Product already exists with ID: %d";
     public static final String PRODUCT_INVALID_CATEGORY = "Invalid product category";
     public static final String PRODUCT_INVALID_TYPE = "Invalid product type";
+    public static final String PRODUCT_INVALID_NAME_LENGTH = "Invalid product name length: Name must have at least 3 letters and less than 255";
     // ===================== ORDER ERRORS =====================
     public static final String ORDER_NOT_FOUND = "Order not found with ID: %d";
     public static final String ORDER_ALREADY_EXISTS = "Order already exists with ID: %d";
