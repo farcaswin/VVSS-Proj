@@ -9,7 +9,9 @@ import drinkshop.service.exception.BusinessException;
 import drinkshop.service.validator.ProductValidator;
 import drinkshop.service.validator.Validator;
 import org.junit.jupiter.api.*;
-
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.api.Nested;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,136 +37,164 @@ class AddProductTest {
     // CAZURI ECP (Equivalence Class Partitioning)
     // ==========================================
 
-    @Test
-    @Order(1)
-    @DisplayName("TC1_ECP: Adaugare produs cu date valide")
-    @Timeout(value = 1, unit = TimeUnit.SECONDS)
-    void testAddProduct_ECP_Valid() {
-        Product validProduct = new Product(1, "Latte", 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+    @Nested
+    class ECPTestsClass {
 
-        // ACT
-        productService.addProduct(validProduct);
+        @Test
+        @Order(1)
+        @DisplayName("TC1_ECP: Adaugare produs cu date valide")
+        @Timeout(value = 1, unit = TimeUnit.SECONDS)
+        void testAddProduct_ECP_Valid() {
+            Product validProduct = new Product(1, "Latte", 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertNotNull(dummyRepo.findOne(1));    // means product was added
-    }
+            // ACT
+            productService.addProduct(validProduct);
 
-    @Test
-    @Order(2)
-    @DisplayName("TC4_ECP: Nume prea scurt (Invalid EC)")
-    void testAddProduct_ECP_NameTooShort() {
-        // ARRANGE
-        Product invalidProduct = new Product(1, "Ca", 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+            // ASSERT
+            assertNotNull(dummyRepo.findOne(1));    // means product was added
+        }
 
-        // ACT
-        BusinessException exception = assertThrows(BusinessException.class, () -> {
-            productService.addProduct(invalidProduct);
-        });
+        @Test
+        @Order(2)
+        @DisplayName("TC4_ECP: Nume prea scurt (Invalid EC)")
+        void testAddProduct_ECP_NameTooShort() {
+            // ARRANGE
+            Product invalidProduct = new Product(1, "Ca", 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
-        assertEquals("Invalid product name length: Name must have at least 3 letters and less than 255", exception.getMessage());
-    }
+            // ACT
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                productService.addProduct(invalidProduct);
+            });
 
-    @Test
-    @Order(3)
-    @DisplayName("TC9_ECP: Pret < 0 (Invalid EC)")
-    void testAddProduct_ECP_PriceNegative() {
-        // ARRANGE
-        Product invalidProduct = new Product(1, "Latte", -12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+            // ASSERT
+            assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
+            assertEquals("Invalid product name length: Name must have at least 3 letters and less than 255", exception.getMessage());
+        }
 
-        // ACT
-        BusinessException exception = assertThrows(BusinessException.class, () -> {
-            productService.addProduct(invalidProduct);
-        });
+        @Test
+        @Order(3)
+        @DisplayName("TC9_ECP: Pret < 0 (Invalid EC)")
+        void testAddProduct_ECP_PriceNegative() {
+            // ARRANGE
+            Product invalidProduct = new Product(1, "Latte", -12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
-        assertEquals("Invalid price: Price must be greater than 0", exception.getMessage());
+            // ACT
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                productService.addProduct(invalidProduct);
+            });
 
+            // ASSERT
+            assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
+            assertEquals("Invalid price: Price must be greater than 0", exception.getMessage());
+
+        }
+
+        // Parameterized tests for invalid ECP cases with csv values
+        @ParameterizedTest
+        @CsvSource({
+                "Ca, 12.0, PRODUCT_VALIDATION_ERROR, Invalid product name length: Name must have at least 3 letters and less than 255",
+                "Latte, -12.0, PRODUCT_VALIDATION_ERROR, Invalid price: Price must be greater than 0"
+        })
+        void testAddProduct_ECP_Parameterized(String name, double price, String expectedErrorCode, String expectedMessage) {
+            // ARRANGE
+            Product invalidProduct = new Product(1, name, price, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+
+            // ACT
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                productService.addProduct(invalidProduct);
+            });
+
+            // ASSERT
+            assertEquals(expectedErrorCode, exception.getErrorCode());
+            assertEquals(expectedMessage, exception.getMessage());
+        }
     }
 
     // ==========================================
     // CAZURI BVA (Boundary Value Analysis)
     // ==========================================
 
-    @Test
-    @Order(4)
-    @DisplayName("TC2_BVA: Nume valid limta inferioara (length = 3)")
-    void testAddProduct_BVA_NameLength3() {
-        // ARRANGE
-        Product validProduct = new Product(1, "Tea", 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+    @Nested
+    class BVATestesClass {
 
-        // ACT
-        productService.addProduct(validProduct);
+        @Test
+        @Order(4)
+        @DisplayName("TC2_BVA: Nume valid limta inferioara (length = 3)")
+        void testAddProduct_BVA_NameLength3() {
+            // ARRANGE
+            Product validProduct = new Product(1, "Tea", 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertNotNull(dummyRepo.findOne(1));
-    }
+            // ACT
+            productService.addProduct(validProduct);
 
-    @Test
-    @Order(5)
-    @DisplayName("TC4_BVA: Nume valid limita superioara (length = 255)")
-    void testAddProduct_BVA_NameLength255() {
-        // ARRANGE
-        String name255 = "M".repeat(255); // Genereaza un string de 255 caractere
-        Product validProduct = new Product(1, name255, 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+            // ASSERT
+            assertNotNull(dummyRepo.findOne(1));
+        }
 
-        // ACT
-        productService.addProduct(validProduct);
+        @Test
+        @Order(5)
+        @DisplayName("TC4_BVA: Nume valid limita superioara (length = 255)")
+        void testAddProduct_BVA_NameLength255() {
+            // ARRANGE
+            String name255 = "M".repeat(255); // Genereaza un string de 255 caractere
+            Product validProduct = new Product(1, name255, 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertNotNull(dummyRepo.findOne(1));
-    }
+            // ACT
+            productService.addProduct(validProduct);
 
-    @Test
-    @Order(6)
-    @DisplayName("TC6_BVA: Nume invalid limita superioara (length = 256)")
-    void testAddProduct_BVA_NameLength256() {
-        // ARRANGE
-        String name256 = "M".repeat(256);
-        Product invalidProduct = new Product(1, name256, 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+            // ASSERT
+            assertNotNull(dummyRepo.findOne(1));
+        }
 
-        // ACT
-        BusinessException exception = assertThrows(BusinessException.class, () -> {
-            productService.addProduct(invalidProduct);
-        });
+        @Test
+        @Order(6)
+        @DisplayName("TC6_BVA: Nume invalid limita superioara (length = 256)")
+        void testAddProduct_BVA_NameLength256() {
+            // ARRANGE
+            String name256 = "M".repeat(256);
+            Product invalidProduct = new Product(1, name256, 12.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
-        assertEquals("Invalid product name length: Name must have at least 3 letters and less than 255", exception.getMessage());
+            // ACT
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                productService.addProduct(invalidProduct);
+            });
 
-    }
+            // ASSERT
+            assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
+            assertEquals("Invalid product name length: Name must have at least 3 letters and less than 255", exception.getMessage());
 
-    @Test
-    @Order(7)
-    @DisplayName("TC8_BVA: Pret invalid limita inferioara (pret = 0.0)")
-    void testAddProduct_BVA_PriceZero() {
-        // ARRANGE
-        Product invalidProduct = new Product(1, "Late", 0.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+        }
 
-        // ACT
-        BusinessException exception = assertThrows(BusinessException.class, () -> {
-            productService.addProduct(invalidProduct);
-        });
+        @Test
+        @Order(7)
+        @DisplayName("TC8_BVA: Pret invalid limita inferioara (pret = 0.0)")
+        void testAddProduct_BVA_PriceZero() {
+            // ARRANGE
+            Product invalidProduct = new Product(1, "Late", 0.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
-        assertEquals("Invalid price: Price must be greater than 0", exception.getMessage());
+            // ACT
+            BusinessException exception = assertThrows(BusinessException.class, () -> {
+                productService.addProduct(invalidProduct);
+            });
 
-    }
+            // ASSERT
+            assertEquals("PRODUCT_VALIDATION_ERROR", exception.getErrorCode());
+            assertEquals("Invalid price: Price must be greater than 0", exception.getMessage());
 
-    @Test
-    @Order(8)
-    @DisplayName("TC9_BVA: Pret valid (pret = 1.0)")
-    void testAddProduct_BVA_PriceOne() {
-        // ARRANGE
-        Product validProduct = new Product(1, "Late", 1.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
+        }
 
-        // ACT
-        productService.addProduct(validProduct);
+        @Test
+        @Order(8)
+        @DisplayName("TC9_BVA: Pret valid (pret = 1.0)")
+        void testAddProduct_BVA_PriceOne() {
+            // ARRANGE
+            Product validProduct = new Product(1, "Late", 1.0, BeverageCategory.MILK_COFFEE, BeverageType.DAIRY);
 
-        // ASSERT
-        assertNotNull(dummyRepo.findOne(1));
+            // ACT
+            productService.addProduct(validProduct);
+
+            // ASSERT
+            assertNotNull(dummyRepo.findOne(1));
+        }
     }
 }
