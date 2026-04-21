@@ -9,6 +9,7 @@ import drinkshop.service.exception.ErrorConstants;
 import drinkshop.service.util.NullSafe;
 import drinkshop.service.validator.Validator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -153,15 +154,19 @@ public class ProductService {
      * @return List of filtered products
      */
     public List<Product> filterByCategorie(BeverageCategory categorie) {
-        NullSafe.requireNonNull(categorie, String.format(ErrorConstants.NULL_ENTITY, "Category"));
-
+        NullSafe.requireNonNull(categorie, "Category");
         if (categorie == BeverageCategory.ALL) {
             return getAllProducts();
         }
-
-        return getAllProducts().stream()
-                .filter(p -> p.getCategorie() == categorie)
-                .collect(Collectors.toList());
+        List<Product> filtered = new ArrayList<>();
+        List<Product> allProducts = getAllProducts();
+        for (Product p : allProducts) {
+            if (p != null)
+                if (p.getCategorie() == categorie) {
+                    filtered.add(p);
+                }
+        }
+        return filtered;
     }
 
     /**
