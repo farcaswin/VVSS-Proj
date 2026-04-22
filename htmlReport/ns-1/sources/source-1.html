@@ -1,0 +1,305 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > ProductService</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">drinkshop.service</a>
+</div>
+
+<h1>Coverage Summary for Class: ProductService (drinkshop.service)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ProductService</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    37.5%
+  </span>
+  <span class="absValue">
+    (3/8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    55.6%
+  </span>
+  <span class="absValue">
+    (10/18)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    29.4%
+  </span>
+  <span class="absValue">
+    (15/51)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package drinkshop.service;
+&nbsp;
+&nbsp;import drinkshop.domain.BeverageCategory;
+&nbsp;import drinkshop.domain.BeverageType;
+&nbsp;import drinkshop.domain.Product;
+&nbsp;import drinkshop.repository.Repository;
+&nbsp;import drinkshop.service.exception.BusinessException;
+&nbsp;import drinkshop.service.exception.ErrorConstants;
+&nbsp;import drinkshop.service.util.NullSafe;
+&nbsp;import drinkshop.service.validator.Validator;
+&nbsp;
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
+&nbsp;import java.util.stream.Collectors;
+&nbsp;
+&nbsp;/**
+&nbsp; * ProductService - Manages all product-related business operations.
+&nbsp; * Includes dependency injection for ProductValidator (C06 - Input Validation).
+&nbsp; * Includes null-safe checks and Optional pattern (C05 - NullPointerException Prevention).
+&nbsp; */
+&nbsp;public class ProductService {
+&nbsp;
+&nbsp;    private final Repository&lt;Integer, Product&gt; productRepo;
+&nbsp;    private final Validator&lt;Product&gt; productValidator;
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Constructor with Dependency Injection
+&nbsp;     *
+&nbsp;     * @param productRepo      Repository for product persistence
+&nbsp;     * @param productValidator Validator for product validation
+&nbsp;     */
+<b class="fc">&nbsp;    public ProductService(Repository&lt;Integer, Product&gt; productRepo, Validator&lt;Product&gt; productValidator) {</b>
+<b class="fc">&nbsp;        this.productRepo = NullSafe.requireNonNull(productRepo, ErrorConstants.NULL_REPOSITORY);</b>
+<b class="fc">&nbsp;        this.productValidator = NullSafe.requireNonNull(productValidator, ErrorConstants.NULL_VALIDATOR);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Add new product with validation (C06 - Input Data Validation)
+&nbsp;     *
+&nbsp;     * @param p Product to add
+&nbsp;     * @throws BusinessException if product validation fails
+&nbsp;     */
+&nbsp;    public void addProduct(Product p) {
+&nbsp;        // C06: Validate input data before processing
+<b class="nc">&nbsp;        productValidator.validate(p);</b>
+&nbsp;
+&nbsp;        // C05: Null-safe check
+<b class="nc">&nbsp;        NullSafe.requireNonNull(p, String.format(ErrorConstants.NULL_ENTITY, &quot;Product&quot;));</b>
+&nbsp;
+&nbsp;        try {
+<b class="nc">&nbsp;            productRepo.save(p);</b>
+<b class="nc">&nbsp;            System.out.println(&quot;Product added&quot;);</b>
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            throw new BusinessException(&quot;PRODUCT_ADD_FAILED&quot;,</b>
+<b class="nc">&nbsp;                    String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Update existing product with validation (C06 - Input Data Validation)
+&nbsp;     *
+&nbsp;     * @param id        Product ID
+&nbsp;     * @param name      Product name
+&nbsp;     * @param price     Product price
+&nbsp;     * @param categorie Product category
+&nbsp;     * @param tip       Product type
+&nbsp;     * @throws BusinessException if validation fails or product not found
+&nbsp;     */
+&nbsp;    public void updateProduct(int id, String name, double price, BeverageCategory categorie, BeverageType tip) {
+&nbsp;        // C05: Null-safe checks
+<b class="nc">&nbsp;        NullSafe.requireNonNull(name, String.format(ErrorConstants.NULL_ENTITY, &quot;Product name&quot;));</b>
+<b class="nc">&nbsp;        NullSafe.requireNonNull(categorie, String.format(ErrorConstants.NULL_ENTITY, &quot;Category&quot;));</b>
+<b class="nc">&nbsp;        NullSafe.requireNonNull(tip, String.format(ErrorConstants.NULL_ENTITY, &quot;Type&quot;));</b>
+&nbsp;
+&nbsp;        // Check if product exists (C05 - Avoid NullPointerException)
+<b class="nc">&nbsp;        Product existing = productRepo.findOne(id);</b>
+<b class="nc">&nbsp;        if (existing == null) {</b>
+<b class="nc">&nbsp;            throw new BusinessException(&quot;PRODUCT_NOT_FOUND&quot;,</b>
+<b class="nc">&nbsp;                    String.format(ErrorConstants.PRODUCT_NOT_FOUND, id));</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        Product updated = new Product(id, name, price, categorie, tip);</b>
+&nbsp;
+&nbsp;        // C06: Validate before update
+<b class="nc">&nbsp;        productValidator.validate(updated);</b>
+&nbsp;
+&nbsp;        try {
+<b class="nc">&nbsp;            productRepo.update(updated);</b>
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            throw new BusinessException(&quot;PRODUCT_UPDATE_FAILED&quot;,</b>
+<b class="nc">&nbsp;                    String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Delete product with existence check (C05 - NullPointerException Prevention)
+&nbsp;     *
+&nbsp;     * @param id Product ID
+&nbsp;     * @throws BusinessException if product not found
+&nbsp;     */
+&nbsp;    public void deleteProduct(int id) {
+&nbsp;        // C05: Check if product exists before deletion
+<b class="nc">&nbsp;        Optional&lt;Product&gt; product = Optional.ofNullable(productRepo.findOne(id));</b>
+&nbsp;
+<b class="nc">&nbsp;        if (product.isEmpty()) {</b>
+<b class="nc">&nbsp;            throw new BusinessException(&quot;PRODUCT_NOT_FOUND&quot;,</b>
+<b class="nc">&nbsp;                    String.format(ErrorConstants.PRODUCT_NOT_FOUND, id));</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        try {
+<b class="nc">&nbsp;            productRepo.delete(id);</b>
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            throw new BusinessException(&quot;PRODUCT_DELETE_FAILED&quot;,</b>
+<b class="nc">&nbsp;                    String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Get all products (C05 - Null-safe handling)
+&nbsp;     *
+&nbsp;     * @return List of all products
+&nbsp;     */
+&nbsp;    public List&lt;Product&gt; getAllProducts() {
+&nbsp;        try {
+<b class="fc">&nbsp;            List&lt;Product&gt; products = productRepo.findAll();</b>
+&nbsp;            // C05: Null-safe check
+<b class="fc">&nbsp;            return NullSafe.isNotEmpty(products) ? products : List.of();</b>
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            throw new BusinessException(&quot;PRODUCTS_FETCH_FAILED&quot;,</b>
+<b class="nc">&nbsp;                    String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Find product by ID with null-safe handling (C05 - Optional Pattern)
+&nbsp;     *
+&nbsp;     * @param id Product ID
+&nbsp;     * @return Optional containing product if found
+&nbsp;     */
+&nbsp;    public Optional&lt;Product&gt; findById(int id) {
+&nbsp;        try {
+<b class="nc">&nbsp;            return Optional.ofNullable(productRepo.findOne(id));</b>
+&nbsp;        } catch (Exception e) {
+<b class="nc">&nbsp;            throw new BusinessException(&quot;PRODUCT_FIND_FAILED&quot;,</b>
+<b class="nc">&nbsp;                    String.format(ErrorConstants.OPERATION_FAILED, e.getMessage()), e);</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Filter products by category with null-safe handling
+&nbsp;     *
+&nbsp;     * @param categorie Category filter
+&nbsp;     * @return List of filtered products
+&nbsp;     */
+&nbsp;    public List&lt;Product&gt; filterByCategorie(BeverageCategory categorie) {
+<b class="fc">&nbsp;        NullSafe.requireNonNull(categorie, &quot;Category&quot;);</b>
+<b class="fc">&nbsp;        if (categorie == BeverageCategory.ALL) {</b>
+<b class="fc">&nbsp;            return getAllProducts();</b>
+&nbsp;        }
+<b class="fc">&nbsp;        List&lt;Product&gt; filtered = new ArrayList&lt;&gt;();</b>
+<b class="fc">&nbsp;        List&lt;Product&gt; allProducts = getAllProducts();</b>
+<b class="fc">&nbsp;        for (Product p : allProducts) {</b>
+<b class="fc">&nbsp;            if (p != null)</b>
+<b class="fc">&nbsp;                if (p.getCategorie() == categorie) {</b>
+<b class="fc">&nbsp;                    filtered.add(p);</b>
+&nbsp;                }
+&nbsp;        }
+<b class="fc">&nbsp;        return filtered;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    /**
+&nbsp;     * Filter products by type with null-safe handling
+&nbsp;     *
+&nbsp;     * @param tip Type filter
+&nbsp;     * @return List of filtered products
+&nbsp;     */
+&nbsp;    public List&lt;Product&gt; filterByTip(BeverageType tip) {
+<b class="nc">&nbsp;        NullSafe.requireNonNull(tip, String.format(ErrorConstants.NULL_ENTITY, &quot;Type&quot;));</b>
+&nbsp;
+<b class="nc">&nbsp;        if (tip == BeverageType.ALL) {</b>
+<b class="nc">&nbsp;            return getAllProducts();</b>
+&nbsp;        }
+&nbsp;
+<b class="nc">&nbsp;        return getAllProducts().stream()</b>
+<b class="nc">&nbsp;                .filter(p -&gt; p.getTip() == tip)</b>
+<b class="nc">&nbsp;                .collect(Collectors.toList());</b>
+&nbsp;    }
+&nbsp;}
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2026-04-21 20:58</div>
+</div>
+</body>
+</html>
